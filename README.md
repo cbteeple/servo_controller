@@ -15,20 +15,20 @@ Control several servos simultaneously using some serial commands.
 ## Usage
 1. Connect to your MCU via serial
 2. Set the desired transition time (in ms) between the current setpoint and new setpoints
-  - `time;1500` sets a 1.5 second transition (servo speed is limited to meet this time)
-  - `time;0` sets a 0 second transition (servo moves as fast as it can)
+    - `time;1500` sets a 1.5 second transition (servo speed is limited to meet this time)
+    - `time;0` sets a 0 second transition (servo moves as fast as it can)
 3. Set setpoint angle for all channels (in degrees)
-  - `set;90` sets the setpoint to 90 degrees for all servos
+    - `set;90` sets the setpoint to 90 degrees for all servos
 4. Set the setpoint for each channel separately
-  - `set;0;90;120;180` sets the setpoints for all four channels
-  - _Note: the number of setpoints you send needs to equal the number of channels you have. Otherwise the fiest value will be applied to all channels._
+    - `set;0;90;120;180` sets the setpoints for all four channels
+    - _Note: the number of setpoints you send needs to equal the number of channels you have. Otherwise the fiest value will be applied to all channels._
 
 ## Reference:
 This project is based heavliy on my [Ctrl-P project](https://github.com/cbteeple/pressure_controller).
-- The command structure is identical.
-- The onboard live interpolation is similar
+    - The command structure is identical.
+    - The onboard live interpolation is similar
 
 Some differences:
-- This is super simple. No trajectory buffer or other deterministic timing.
-- No real-time checking for new serial commands.
-- You can't store settings in EEPROM yet.
+    - This is super simple. No trajectory buffer or other deterministic timing.
+    - No real-time checking for new serial commands.
+    - You can't store settings in EEPROM yet.
