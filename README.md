@@ -13,7 +13,7 @@ Control several servos simultaneously using some serial commands.
 4. Flash the program
 
 ## Usage
-1. Connect to your MCU via serial
+1. Connect to your MCU via serial, and type commands into the arduino serial monitor (or any other serial terminal)
 2. Set the desired transition time (in ms) between the current setpoint and new setpoints
     - `time;1500` sets a 1.5 second transition (servo speed is limited to meet this time)
     - `time;0` sets a 0 second transition (servo moves as fast as it can)
