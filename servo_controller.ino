@@ -11,16 +11,20 @@
 
 #include <Servo.h>
 
+// Set up these parameters
 #define NUM_SERVOS 4
-
 int servo_pins[]={2,3,4,5,6,7,8,9};
+int timestep = 10;
 
+
+/*
+ * No configuration needed past here. Everything past here should be taken care of.
+ * Feel free to investigate if you want to understand how I wrote this though.
+ */
 
 Servo myServos[NUM_SERVOS];
-// twelve servo objects can be created on most boards
 
 int pos = 0;    // variable to store the servo position
-int timestep = 10;
 unsigned long transition_time = 0;
 int setpoint[NUM_SERVOS];
 int prev_setpoint[NUM_SERVOS];
