@@ -2,11 +2,12 @@
 
 Control several servos simultaneously using some serial commands.
 
-## Hardware Setup
+## Setup
+### Hardware
 1. Several servos connected to 5V, Ground, and each to thier own PWM pin
 2. 5V power (4 servos work fine on USB power most of the time).
 
-## Software Setup
+### Software
 1. Update _servo_pins_ variable with pin numbers for your board (most arduino/teeney boards have many PWM pins)
 2. Update _NUM_SERVOS_ to suit your setup.
 3. Mess with the _timestep_ if you want to. 10 ms seems to work for me.
@@ -24,11 +25,11 @@ Control several servos simultaneously using some serial commands.
     - _Note: the number of setpoints you send needs to equal the number of channels you have. Otherwise the fiest value will be applied to all channels._
 
 ## Reference:
-This project is based heavliy on my [Ctrl-P project](https://github.com/cbteeple/pressure_controller).
-    - The command structure is identical.
-    - The onboard live interpolation is similar
+### This project is based heavliy on my [Ctrl-P project](https://github.com/cbteeple/pressure_controller).   
+- The command structure is identical.
+- The onboard live interpolation is similar
 
-Some differences:
-    - This is super simple. No trajectory buffer or other deterministic timing.
-    - No real-time checking for new serial commands.
-    - You can't store settings in EEPROM yet.
+### Some differences:  
+- This is super simple. No trajectory buffer or other deterministic timing.
+- No real-time checking for new serial commands.
+- You can't store settings in EEPROM yet.
