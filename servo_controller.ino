@@ -10,12 +10,16 @@
 */
 
 #include <Servo.h>
+#include "smooth_pos.h"
 
 // Set up these parameters
 #define NUM_SERVOS 4
 int servo_pins[]={2,3,4,5,6,7,8,9};
 int timestep = 10;
 
+// Minimum and maximum PWM timings for the servos to reach 0 and 180 degrees
+int servo_min = 540;  // default from arduino tutorial: 544
+int servo_max = 2490; // default from arduino tutorial: 2400
 
 /*
  * No configuration needed past here. Everything past here should be taken care of.
@@ -24,14 +28,15 @@ int timestep = 10;
 
 Servo myServos[NUM_SERVOS];
 
-float pos = 0;    // variable to store the servo position
-unsigned long transition_time = 0;
+
+unsigned long transition_time = 500;
 float setpoint[NUM_SERVOS];
 float prev_setpoint[NUM_SERVOS];
 bool new_setpoint = true;
+bool use_degrees = true;
+bool echo_global = true;
 
-int servo_min = 544;
-int servo_max = 2400;
+smoothPos smooth_positions[NUM_SERVOS];
 
 
 void setup() {
@@ -42,6 +47,8 @@ void setup() {
     myServos[i].attach(servo_pins[i],servo_min, servo_max);
     setpoint[i] = 0;
     prev_setpoint[i] = 0;
+
+    smooth_positions[i].init(0, transition_time);
   }
 }
 
@@ -50,37 +57,39 @@ void setup() {
 void loop() {
 
   if (new_setpoint){
-    int num_steps = ceil(float(transition_time)/float(timestep));
+    // Set the new goal for all channels 
+    for(int i=0; i<NUM_SERVOS; i++){
+      smooth_positions[i].set_time_ms(transition_time);
+      smooth_positions[i].set_new_goal(setpoint[i]);
+    }
 
+    int num_steps = ceil(float(transition_time)/float(timestep));
     String pos_str = "";
+    
     for (int step = 0; step <= num_steps; step += 1) {
+
+      int curr_time_ms = timestep*step;
 
       // Update the setpoints for all of the servos at once
       pos_str = String(millis());
       pos_str += '\t'+"Positions: ";
       for(int i=0; i<NUM_SERVOS; i++){
-        pos = lin_interp(float(prev_setpoint[i]), float(setpoint[i]), float(step)/float(num_steps));     
-        float pos_micro = mapFloat(pos,0.0,180.0,float(servo_min),float(servo_max)); 
+        float pos = smooth_positions[i].get_point_ms(curr_time_ms);
+        float pos_micro = pos;
+        if (use_degrees){
+          pos_micro = mapFloat(pos,0.0,180.0,float(servo_min),float(servo_max));
+        }
+         
         myServos[i].writeMicroseconds(int(pos_micro));              // tell servo to go to position
+
         pos_str += '\t'+String(pos,4);
+        
         
       }
       send_string(pos_str);
       delay(timestep);
     }
-    
-    pos_str = String(millis());
-    pos_str += '\t'+"Positions: ";
-    for(int i=0; i<NUM_SERVOS; i++){
-      float pos_micro = mapFloat(setpoint[i],0.0,180.0,float(servo_min),float(servo_max)); 
-      myServos[i].writeMicroseconds(int(pos_micro));
-      pos_str+= '\t'+String(setpoint[i],4);
-      
-      prev_setpoint[i] = setpoint[i];
-    }
-    send_string(pos_str);
-    new_setpoint = false;
-  
+    new_setpoint = false;  
   }
 
   // check for new serial messages
@@ -121,6 +130,8 @@ void send_string(String bc_string){
 void parse_command(String command){
   if (command.length()){
     String out_str="_";
+    bool echo_one_time=false;
+    
     if(command.startsWith("TIME")){
       if (get_string_value(command,';', 1).length()){
         transition_time = get_string_value(command,';', 1).toInt();
@@ -154,10 +165,54 @@ void parse_command(String command){
       }
       
     }
+    else if(command.startsWith("MODE")){
+      if (get_string_value(command,';', NUM_SERVOS).length()){
+        for(int i=0; i<NUM_SERVOS; i++){
+          smooth_positions[i].set_mode(get_string_value(command,';', i+1).toInt());
+        }
+        out_str+="New ";
+      }
+      else if (get_string_value(command,';', 1).length()){
+        int allset=get_string_value(command,';', 1).toInt();
+
+        for(int i=0; i<NUM_SERVOS; i++){
+          smooth_positions[i].set_mode(allset);
+        }
+        out_str+="New ";
+      }
+      out_str+="Mode: ";
+      for(int i=0; i<NUM_SERVOS; i++){
+        out_str += '\t'+String(smooth_positions[i].get_mode());
+      }
+      
+    }
+
+    else if(command.startsWith("DEG")){
+      if (get_string_value(command,';', 1).length()){
+        use_degrees = bool(get_string_value(command,';', 1).toInt());
+        out_str+="New ";
+      }
+      out_str+="Degrees Usage: " + String(use_degrees);
+    }
+    else if(command.startsWith("ECHO")){
+      if (get_string_value(command,';', 1).length()){
+        echo_global = bool(get_string_value(command,';', 1).toInt());
+        echo_one_time = true;
+        out_str+="New ";
+      }
+      out_str+="Echo: " + String(echo_global);
+    }
+
+
+    
     else{
       out_str = "Unrecognized Command";  
     }
-    send_string(out_str);
+
+    if (echo_global or echo_one_time){
+      send_string(out_str);
+      echo_one_time = false;
+    }
   }
 }
 
@@ -181,15 +236,15 @@ String get_string_value(String data, char separator, int index)
 
 
 
-// Linear interpolation
-float lin_interp(float a, float b, float f){
-    return a + f * (b - a);
-}
-
-
 
 // Float mapping (not native to arduino for some reason)
 float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
+
+
+
+
+
+
 
