@@ -35,7 +35,6 @@ _Note: for channel-specific commands, the number of arguments in a command needs
     - `mode;1` use smooth control (linear velocity ramps), assuming speed is 0 at both ends.
 2. **Control Mode for each channel** (`int, default = 1,...,1`)
     - `mode;0;1;1;1` set all channels to use smooth control, except channel 1 (which uses linear interpolation)
-
 3. **New Setpoint for all channels** (`float, default = 0`) - Set setpoint angle for all channels (in degrees or microseconds depending on the `deg` setting)
     - `set;90` sets the setpoint to 90 degrees for all servos
 4. **New Setpoint for each channel** (`float, default = 0,...,0`) - Set the setpoint for each channel separately
