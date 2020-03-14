@@ -24,12 +24,14 @@ int timestep = 10;
 
 Servo myServos[NUM_SERVOS];
 
-int pos = 0;    // variable to store the servo position
+float pos = 0;    // variable to store the servo position
 unsigned long transition_time = 0;
-int setpoint[NUM_SERVOS];
-int prev_setpoint[NUM_SERVOS];
+float setpoint[NUM_SERVOS];
+float prev_setpoint[NUM_SERVOS];
 bool new_setpoint = true;
 
+int servo_min = 544;
+int servo_max = 2400;
 
 
 void setup() {
@@ -37,7 +39,7 @@ void setup() {
 
   // Initialize the servos
   for(int i=0; i<NUM_SERVOS; i++){
-    myServos[i].attach(servo_pins[i]);
+    myServos[i].attach(servo_pins[i],servo_min, servo_max);
     setpoint[i] = 0;
     prev_setpoint[i] = 0;
   }
@@ -57,9 +59,10 @@ void loop() {
       pos_str = String(millis());
       pos_str += '\t'+"Positions: ";
       for(int i=0; i<NUM_SERVOS; i++){
-        pos = int(lin_interp(float(prev_setpoint[i]), float(setpoint[i]), float(step)/float(num_steps)));      
-        myServos[i].write(pos);              // tell servo to go to position
-        pos_str += '\t'+String(pos);
+        pos = lin_interp(float(prev_setpoint[i]), float(setpoint[i]), float(step)/float(num_steps));     
+        float pos_micro = mapFloat(pos,0.0,180.0,float(servo_min),float(servo_max)); 
+        myServos[i].writeMicroseconds(int(pos_micro));              // tell servo to go to position
+        pos_str += '\t'+String(pos,4);
         
       }
       send_string(pos_str);
@@ -69,8 +72,9 @@ void loop() {
     pos_str = String(millis());
     pos_str += '\t'+"Positions: ";
     for(int i=0; i<NUM_SERVOS; i++){
-      myServos[i].write(setpoint[i]);
-      pos_str+= '\t'+String(setpoint[i]);
+      float pos_micro = mapFloat(setpoint[i],0.0,180.0,float(servo_min),float(servo_max)); 
+      myServos[i].writeMicroseconds(int(pos_micro));
+      pos_str+= '\t'+String(setpoint[i],4);
       
       prev_setpoint[i] = setpoint[i];
     }
@@ -128,14 +132,14 @@ void parse_command(String command){
     else if(command.startsWith("SET")){
       if (get_string_value(command,';', NUM_SERVOS).length()){
         for(int i=0; i<NUM_SERVOS; i++){
-          setpoint[i] = get_string_value(command,';', i+1).toInt();
+          setpoint[i] = get_string_value(command,';', i+1).toFloat();
           
         }
         new_setpoint = true;
         out_str+="New ";
       }
       else if (get_string_value(command,';', 1).length()){
-        int allset=get_string_value(command,';', 1).toInt();
+        float allset=get_string_value(command,';', 1).toFloat();
 
         for(int i=0; i<NUM_SERVOS; i++){
           setpoint[i] = allset;
@@ -146,7 +150,7 @@ void parse_command(String command){
       }
       out_str+="Setpoint: ";
       for(int i=0; i<NUM_SERVOS; i++){
-        out_str += '\t'+String(setpoint[i]);
+        out_str += '\t'+String(setpoint[i],4);
       }
       
     }
@@ -180,5 +184,12 @@ String get_string_value(String data, char separator, int index)
 // Linear interpolation
 float lin_interp(float a, float b, float f){
     return a + f * (b - a);
+}
+
+
+
+// Float mapping (not native to arduino for some reason)
+float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
