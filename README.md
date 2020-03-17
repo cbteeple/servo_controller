@@ -40,6 +40,13 @@ _Note: for channel-specific commands, the number of arguments in a command needs
 4. **New Setpoint for each channel** (`float, default = 0,...,0`) - Set the setpoint for each channel separately
     - `set;45;90;135;180` sets the setpoints for all four channels
 
+### Position Definitions
+1. **Define Positions** (`int, float...`) - define positions via an index
+	- `defpos;0;45.0;135.0;0.0;180.0` sets the 0th position definition to "45, 135, 0, 180" degrees
+2. **Move to a defined position using the index**
+	-`pos;0` - moves to the 0th position definition
+	
+
 ## Reference:
 ### This project is based heavliy on my [Ctrl-P project](https://github.com/cbteeple/pressure_controller).   
 - The command structure is identical.

@@ -52,7 +52,7 @@ float def_positions[NUM_DEF_POSITIONS][NUM_SERVOS]=
 Servo myServos[NUM_SERVOS];
 
 
-unsigned long transition_time = 100;
+unsigned long transition_time = 400;
 float setpoint[NUM_SERVOS];
 float prev_setpoint[NUM_SERVOS];
 bool new_setpoint = true;
@@ -72,7 +72,7 @@ void setup() {
     prev_setpoint[i] = def_positions[0][i];
 
     smooth_positions[i].init(def_positions[0][i], transition_time);
-    smooth_positions[i].set_mode(0);
+    smooth_positions[i].set_mode(1);
   }
 }
 
