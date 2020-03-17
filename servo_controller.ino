@@ -9,17 +9,40 @@
     - There is a lot of shared DNA between this firmware and my pressure controller project.
 */
 
+
+/*
+
+anthro
+set;50;130
+
+middle
+set;100;80
+
+cross
+set;150;30
+
+
+
+
+ */
+
 #include <Servo.h>
 #include "smooth_pos.h"
 
 // Set up these parameters
-#define NUM_SERVOS 4
+#define NUM_SERVOS 2
 int servo_pins[]={2,3,4,5,6,7,8,9};
 int timestep = 10;
 
 // Minimum and maximum PWM timings for the servos to reach 0 and 180 degrees
 int servo_min = 540;  // default from arduino tutorial: 544
 int servo_max = 2490; // default from arduino tutorial: 2400
+
+
+#define NUM_DEF_POSITIONS 10
+float def_positions[NUM_DEF_POSITIONS][NUM_SERVOS]=
+    {{105,80},{155,30},{55,130},{75,110},{85,100},
+    {0,0},{0,0},{0,0},{0,0},{0,0}};
 
 /*
  * No configuration needed past here. Everything past here should be taken care of.
@@ -29,7 +52,7 @@ int servo_max = 2490; // default from arduino tutorial: 2400
 Servo myServos[NUM_SERVOS];
 
 
-unsigned long transition_time = 500;
+unsigned long transition_time = 100;
 float setpoint[NUM_SERVOS];
 float prev_setpoint[NUM_SERVOS];
 bool new_setpoint = true;
@@ -45,10 +68,11 @@ void setup() {
   // Initialize the servos
   for(int i=0; i<NUM_SERVOS; i++){
     myServos[i].attach(servo_pins[i],servo_min, servo_max);
-    setpoint[i] = 0;
-    prev_setpoint[i] = 0;
+    setpoint[i] = def_positions[0][i];
+    prev_setpoint[i] = def_positions[0][i];
 
-    smooth_positions[i].init(0, transition_time);
+    smooth_positions[i].init(def_positions[0][i], transition_time);
+    smooth_positions[i].set_mode(0);
   }
 }
 
@@ -185,6 +209,76 @@ void parse_command(String command){
         out_str += '\t'+String(smooth_positions[i].get_mode());
       }
       
+    }
+
+    else if(command.startsWith("POS")){
+      if (get_string_value(command,';', 1).length()){
+        int pos_cmd=get_string_value(command,';', 1).toInt();
+
+        if (pos_cmd>=0 & pos_cmd<NUM_DEF_POSITIONS){
+          for(int i=0; i<NUM_SERVOS; i++){
+            setpoint[i] = def_positions[pos_cmd][i];
+            
+          }
+          new_setpoint = true;
+          out_str+="New ";
+        }
+      }
+      out_str+="Position Setpoint: ";
+      for(int i=0; i<NUM_SERVOS; i++){
+        out_str += '\t'+String(setpoint[i],4);
+      }
+      
+    }
+
+    else if(command.startsWith("DEFPOS")){
+      if (get_string_value(command,';', NUM_SERVOS+1).length()){
+        int pos_idx = get_string_value(command,';', 1).toInt();
+
+        if (pos_idx>=0 & pos_idx<NUM_DEF_POSITIONS){
+        
+          for(int i=0; i<NUM_SERVOS; i++){
+            def_positions[pos_idx][i] = get_string_value(command,';', i+2).toFloat();
+            
+          }
+          out_str+="New Position Definitions: ";
+          out_str += String(pos_idx,4);
+          for(int i=0; i<NUM_SERVOS; i++){
+            out_str += '\t'+String(def_positions[pos_idx][i],4);
+          }
+        }
+      }
+      else if (get_string_value(command,';', 1).length()){
+        int pos_idx  = get_string_value(command,';', 1).toInt();
+        float allset = get_string_value(command,';', 2).toFloat();
+
+        if (pos_idx>=0 & pos_idx<NUM_DEF_POSITIONS){
+        
+          for(int i=0; i<NUM_SERVOS; i++){
+            def_positions[pos_idx][i] = allset;
+            
+          }
+          out_str+="New Position Definitions: ";
+          out_str += String(pos_idx,4);
+          for(int i=0; i<NUM_SERVOS; i++){
+              out_str += '\t'+String(def_positions[pos_idx][i],4);
+          }
+        }
+      }
+
+      else{
+        out_str+="Position Definitions: ";
+        out_str+= '\n';
+  
+        for (int pos_idx=0; pos_idx <NUM_DEF_POSITIONS; pos_idx++){
+
+          out_str += String(pos_idx);
+          for(int i=0; i<NUM_SERVOS; i++){
+            out_str += '\t'+String(def_positions[pos_idx][i],4);
+          }
+          out_str += '\n';
+        }
+      }
     }
 
     else if(command.startsWith("DEG")){
