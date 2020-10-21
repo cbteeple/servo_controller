@@ -41,7 +41,7 @@ int servo_max = 2490; // default from arduino tutorial: 2400
 
 #define NUM_DEF_POSITIONS 10
 float def_positions[NUM_DEF_POSITIONS][NUM_SERVOS]=
-    {{105,80},{155,30},{55,130},{75,110},{85,100},
+    {{180,180},{155,30},{55,130},{75,110},{85,100},
     {0,0},{0,0},{0,0},{0,0},{0,0}};
 
 /*
@@ -54,12 +54,17 @@ Servo myServos[NUM_SERVOS];
 
 unsigned long transition_time = 400;
 float setpoint[NUM_SERVOS];
+float max_angle[NUM_SERVOS];
+float min_angle[NUM_SERVOS];
 float prev_setpoint[NUM_SERVOS];
 bool new_setpoint = true;
 bool use_degrees = true;
 bool echo_global = true;
 
 smoothPos smooth_positions[NUM_SERVOS];
+
+float max_start = 180;
+float min_start = 90;
 
 
 void setup() {
@@ -70,6 +75,9 @@ void setup() {
     myServos[i].attach(servo_pins[i],servo_min, servo_max);
     setpoint[i] = def_positions[0][i];
     prev_setpoint[i] = def_positions[0][i];
+
+    max_angle[i] = max_start;
+    min_angle[i] = min_start;
 
     smooth_positions[i].init(def_positions[0][i], transition_time);
     smooth_positions[i].set_mode(1);
@@ -167,8 +175,12 @@ void parse_command(String command){
     else if(command.startsWith("SET")){
       if (get_string_value(command,';', NUM_SERVOS).length()){
         for(int i=0; i<NUM_SERVOS; i++){
-          setpoint[i] = get_string_value(command,';', i+1).toFloat();
-          
+          float val = get_string_value(command,';', i+1).toFloat();
+
+          if (val<=max_angle[i] & val>=min_angle[i] ){
+            setpoint[i] = val;
+          }
+
         }
         new_setpoint = true;
         out_str+="New ";
@@ -177,7 +189,9 @@ void parse_command(String command){
         float allset=get_string_value(command,';', 1).toFloat();
 
         for(int i=0; i<NUM_SERVOS; i++){
-          setpoint[i] = allset;
+          if (allset<=max_angle[i] & allset>=min_angle[i] ){
+            setpoint[i] = allset;
+          }
           
         }
         new_setpoint = true;
@@ -189,6 +203,48 @@ void parse_command(String command){
       }
       
     }
+
+
+    else if(command.startsWith("W")){
+      
+
+      for(int i=0; i<NUM_SERVOS; i++){
+        float allset=setpoint[i]+10;
+        if (allset<=max_angle[i] & allset>=min_angle[i] ){
+          setpoint[i] = allset;
+        }
+        
+      }
+      new_setpoint = true;
+      out_str+="New ";
+        
+      out_str+="Setpoint: ";
+      for(int i=0; i<NUM_SERVOS; i++){
+        out_str += '\t'+String(setpoint[i],4);
+      }
+      
+    }
+
+    else if(command.startsWith("S")){
+
+      for(int i=0; i<NUM_SERVOS; i++){
+        float allset=setpoint[i]-10;
+        if (allset<=max_angle[i] & allset>=min_angle[i] ){
+          setpoint[i] = allset;
+        }
+        
+      }
+      new_setpoint = true;
+      out_str+="New ";
+        
+      out_str+="Setpoint: ";
+      for(int i=0; i<NUM_SERVOS; i++){
+        out_str += '\t'+String(setpoint[i],4);
+      }
+      
+    }
+
+    
     else if(command.startsWith("MODE")){
       if (get_string_value(command,';', NUM_SERVOS).length()){
         for(int i=0; i<NUM_SERVOS; i++){
@@ -230,6 +286,58 @@ void parse_command(String command){
       }
       
     }
+
+
+    else if(command.startsWith("MAX")){
+      if (get_string_value(command,';', NUM_SERVOS).length()){
+        for(int i=0; i<NUM_SERVOS; i++){
+          max_angle[i] = get_string_value(command,';', i+1).toFloat();
+          
+        }
+        out_str+="New ";
+      }
+      else if (get_string_value(command,';', 1).length()){
+        float allset=get_string_value(command,';', 1).toFloat();
+
+        for(int i=0; i<NUM_SERVOS; i++){
+          max_angle[i] = allset;
+          
+        }
+        out_str+="New ";
+      }
+      out_str+="MAX ANGLE: ";
+      for(int i=0; i<NUM_SERVOS; i++){
+        out_str += '\t'+String(max_angle[i],4);
+      }
+      
+    }
+
+
+    else if(command.startsWith("MIN")){
+      if (get_string_value(command,';', NUM_SERVOS).length()){
+        for(int i=0; i<NUM_SERVOS; i++){
+          min_angle[i] = get_string_value(command,';', i+1).toFloat();
+          
+        }
+        out_str+="New ";
+      }
+      else if (get_string_value(command,';', 1).length()){
+        float allset=get_string_value(command,';', 1).toFloat();
+
+        for(int i=0; i<NUM_SERVOS; i++){
+          min_angle[i] = allset;
+          
+        }
+        out_str+="New ";
+      }
+      out_str+="MAX ANGLE: ";
+      for(int i=0; i<NUM_SERVOS; i++){
+        out_str += '\t'+String(min_angle[i],4);
+      }
+      
+    }
+
+    
 
     else if(command.startsWith("DEFPOS")){
       if (get_string_value(command,';', NUM_SERVOS+1).length()){
@@ -335,10 +443,3 @@ String get_string_value(String data, char separator, int index)
 float mapFloat(float x, float in_min, float in_max, float out_min, float out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
-
-
-
-
-
-
-
