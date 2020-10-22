@@ -64,11 +64,11 @@ bool echo_global = true;
 smoothPos smooth_positions[NUM_SERVOS];
 
 float max_start = 180;
-float min_start = 90;
+float min_start = 80;
 
 
 void setup() {
-  Serial.begin(112500);
+  Serial.begin(115200);
 
   // Initialize the servos
   for(int i=0; i<NUM_SERVOS; i++){
@@ -130,23 +130,23 @@ void loop() {
 }
 
 
-
+String command="";
 // Check for new serial data
 String check_serial() {
   // Get new command
-  String command="";
-  while (Serial.available()) {
+  while (Serial.available() >0) {
     // get the new byte:
+    //command = Serial.readStringUntil('\n');
     char inChar = (char)Serial.read();
     // Add new byte to the inputString:
     command += inChar;
     // If the incoming character is a newline, set a flag so we can process it
     if (inChar == '\n') {
       command.toUpperCase();
+      parse_command(command);
+      command="";  
     }
   }
-
-  parse_command(command);
 
   return command;
 }
